@@ -29,6 +29,32 @@ rl.question("Digite um cargo para buscar: ", async (answer) => {
     const links = await page.$$eval('.descricao > h2 > a', el => el.map(link => link.href)); // o $$eval é uma função que funciona como o querySelectorAll,
     // ele passa por todos elementos e pega o href do link 
     console.log(links)
+
+    
+    for (const link of links) {
+        console.log('Página', count);
+        await page.goto(link);
+        
+        const titulo = await page.$eval('.flex > h1', element => element.innerText);
+        const empresa = await page.$eval('.flex > h2 > a', element => element.innerText);
+        const local = await page.$eval('.grow > h2', element => element.textContent);
+        const salario = await page.$eval('.grow > h2:nth-of-type(2)', element => element.textContent)
+        const descricao = await page.$eval('.info > p', element => element.textContent);
+        
+        const obj = { titulo, empresa, local, salario, descricao }
+        console.log(obj)
+        
+        count++;
+        validacao(page);
+    }
+
+    await page.waitForTimeout(3000); // espera 3 segundos pra fechar o navegador, sem isso, ele fecha instantaneamente
+    await browser.close();
+
+    rl.close();
+});
+
+async function validacao(page) {
     const proximo = await page.$('div.top-pagination > .fright > a:nth-of-type(2)')
 
     if (proximo) {
@@ -37,33 +63,10 @@ rl.question("Digite um cargo para buscar: ", async (answer) => {
             return estilo.display !== 'none';
         }, proximo)
 
-        console.log("Botão visivel:", botaoVisivel)
-
-        if (!botaoVisivel) {
-            console.log("O botão está com display: none")
-        }
-
         await proximo.dispose()
+
+        while(botaoVisivel) {
+            await page.click('#ctl00_ContentBody_lkbPaginacaoTopProximo')
+        }
     }
-
-    for (const link of links) {
-        console.log('Página', count);
-        await page.goto(link);
-
-        const titulo = await page.$eval('.flex > h1', element => element.innerText);
-        const empresa = await page.$eval('.flex > h2 > a', element => element.innerText);
-        const local = await page.$eval('.grow > h2', element => element.textContent);
-        const salario = await page.$eval('.grow > h2:nth-of-type(2)', element => element.textContent)
-        const descricao = await page.$eval('.info > p', element => element.textContent);
-
-        const obj = { titulo, empresa, local, salario, descricao }
-        console.log(obj)
-
-        count++;
-    }
-
-    await page.waitForTimeout(3000); // espera 3 segundos pra fechar o navegador, sem isso, ele fecha instantaneamente
-    await browser.close();
-
-    rl.close();
-});
+}
